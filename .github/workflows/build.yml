@@ -18,8 +18,12 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
       with:
-        fetch-depth: 0  # 确保拉取完整的提交历史记录
-        clean: true     # 确保拉取前清除任何未跟踪的更改
+        fetch-depth: 0  # 拉取完整提交历史记录
+
+    - name: Clean untracked files
+      run: |
+        git clean -fdx  # 强制删除未跟踪文件和目录
+        git reset --hard  # 重置所有文件到最新提交
 
     - name: Setup JDK
       uses: actions/setup-java@v3
