@@ -22,8 +22,8 @@ jobs:
 
     - name: Clean untracked files
       run: |
-        git clean -fdx  # 强制删除未跟踪文件和目录
-        git reset --hard  # 重置所有文件到最新提交
+        git reset --hard  # 重置到最新提交
+        git clean -fdx    # 删除未跟踪的文件和目录
 
     - name: Setup JDK
       uses: actions/setup-java@v3
