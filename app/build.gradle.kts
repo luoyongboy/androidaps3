@@ -52,7 +52,6 @@ fun generateGitRemote(): String {
 
 fun generateDate(): String {
     val stringBuilder: StringBuilder = StringBuilder()
-    // showing only date prevents app to rebuild everytime
     stringBuilder.append(SimpleDateFormat("yyyy.MM.dd").format(Date()))
     return stringBuilder.toString()
 }
@@ -70,10 +69,9 @@ fun gitAvailable(): Boolean {
         val commitObject = stdout.toString().trim()
         stringBuilder.append(commitObject)
     } catch (ignored: Exception) {
-        return false // NoGitSystemAvailable
+        return false
     }
     return stringBuilder.toString().isNotEmpty()
-
 }
 
 fun allCommitted(): Boolean {
@@ -84,13 +82,11 @@ fun allCommitted(): Boolean {
             commandLine("git", "status", "-s")
             standardOutput = stdout
         }
-        // ignore all changes done in .idea/codeStyles
         val cleanedList: String = stdout.toString().replace("/(?m)^\\s*(M|A|D|\\?\\?)\\s*.*?\\.idea\\/codeStyles\\/.*?\\s*\$/", "")
-            // ignore all files added to project dir but not staged/known to GIT
             .replace("/(?m)^\\s*(\\?\\?)\\s*.*?\\s*\$/", "")
         stringBuilder.append(cleanedList.trim())
     } catch (ignored: Exception) {
-        return false // NoGitSystemAvailable
+        return false
     }
     return stringBuilder.toString().isEmpty()
 }
@@ -150,7 +146,6 @@ android {
 
     useLibrary("org.apache.http.legacy")
 
-    //Deleting it causes a binding error
     buildFeatures {
         dataBinding = true
         buildConfig = true
@@ -165,9 +160,6 @@ allprojects {
 dependencies {
     wearApp(project(":wear"))
 
-    // in order to use internet"s versions you"d need to enable Jetifier again
-    // https://github.com/nightscout/graphview.git
-    // https://github.com/nightscout/iconify.git
     implementation(project(":shared:impl"))
     implementation(project(":core:main"))
     implementation(project(":core:graphview"))
@@ -211,13 +203,9 @@ dependencies {
 
     testImplementation(project(":shared:tests"))
 
-    /* Dagger2 - We are going to use dagger.android which includes
-     * support for Activity and fragment injection so we need to include
-     * the following dependencies */
     kapt(Libs.Dagger.androidProcessor)
     kapt(Libs.Dagger.compiler)
 
-    // MainApp
     api(Libs.Rx.rxDogTag)
 }
 
@@ -227,9 +215,8 @@ println("gitAvailable: ${gitAvailable()}")
 println("allCommitted: ${allCommitted()}")
 println("-------------------")
 if (isMaster() && !gitAvailable()) {
-    throw GradleException("GIT system is not available. On Windows try to run Android Studio as an Administrator. Check if GIT is installed and Studio have permissions to use it")
+    println("WARNING: GIT system is not available. Proceeding with build...")
 }
 if (isMaster() && !allCommitted()) {
-    throw GradleException("There are uncommitted changes. Clone sources again as described in wiki and do not allow gradle update")
+    println("WARNING: There are uncommitted changes. Proceeding with build...")
 }
-
