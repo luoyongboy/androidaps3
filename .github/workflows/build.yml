@@ -3,11 +3,11 @@ name: Build Android APK
 on:
   push:
     branches:
-      - main
+      - main  # 当推送到 main 分支时触发
   pull_request:
-      branches:
-      - main
-  workflow_dispatch:
+    branches:
+      - main  # 当对 main 分支的 PR 时触发
+  workflow_dispatch:  # 允许手动触发工作流
 
 jobs:
   build:
@@ -15,38 +15,52 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    # 第一步：拉取代码
     - name: Checkout code
       uses: actions/checkout@v3
       with:
-        fetch-depth: 0  # 确保克隆完整仓库
+        fetch-depth: 0   # 完整克隆所有提交历史
+        clean: true      # 确保删除未跟踪的文件和目录
 
+    # 第二步：设置 JDK 环境
     - name: Setup JDK
       uses: actions/setup-java@v3
       with:
         distribution: 'zulu'
         java-version: '17'
 
+    # 第三步：安装 Android 工具
     - name: Install Android tools
       run: sudo apt-get install -y zipalign apksigner
 
-    - name: Decode and write keystore
-      run: |
-        echo "${{ secrets.RELEASE_KEY_BASE64 }}" | base64 -d > release-key.jks
-
+    # 第四步：构建未签名的 APK
     - name: Build APK
       run: ./gradlew assembleRelease
 
-    - name: Find unsigned APK
+    # 第五步：查找未签名的 APK 并对齐和签名
+    - name: Sign APK
       run: |
+        # 查找未签名的 APK 文件
         APK_FILE=$(find . -name "*-release-unsigned.apk" | head -n 1)
         if [ -z "$APK_FILE" ]; then
           echo "Error: No unsigned APK found!"
           exit 1
         fi
         echo "Found APK: $APK_FILE"
-        zipalign -v -p 4 "$APK_FILE" app-release-aligned.apk
-        apksigner sign --ks release-key.jks --ks-pass pass:789789Fty --ks-key-alias my-key-alias --key-pass pass:789789Fty --out app-release-signed.apk app-release-aligned.apk
 
+        # APK 对齐处理
+        zipalign -v -p 4 "$APK_FILE" app-release-aligned.apk
+
+        # 签名 APK
+        apksigner sign \
+          --ks release-key.jks \
+          --ks-pass pass:789789Fty \
+          --ks-key-alias my-key-alias \
+          --key-pass pass:789789Fty \
+          --out app-release-signed.apk \
+          app-release-aligned.apk
+
+    # 第六步：上传签名后的 APK
     - name: Upload APK as artifact
       uses: actions/upload-artifact@v3
       with:
