@@ -18,15 +18,15 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
       with:
-        fetch-depth: 0  # 确保完整提交历史
+        fetch-depth: 0
 
     - name: Clean untracked files
       run: |
-        git reset --hard HEAD  # 重置所有更改
-        git clean -fdx         # 清除未跟踪文件和目录
+        git reset --hard HEAD
+        git clean -fdx
 
     - name: Debug Git status
-      run: git status          # 检查 Git 状态是否干净
+      run: git status
 
     - name: Setup JDK
       uses: actions/setup-java@v3
@@ -43,7 +43,10 @@ jobs:
 
     - name: Validate Keystore
       run: |
-        keytool -list -keystore release-key-new.jks -storepass ${{ secrets.KEYSTORE_PASSWORD }}
+        keytool -list -keystore release-key-new.jks -storepass ${{ secrets.KEYSTORE_PASSWORD }} || {
+          echo "Failed to validate keystore!";
+          exit 1;
+        }
 
     - name: Clean Gradle cache
       run: rm -rf $HOME/.gradle/caches/
@@ -69,11 +72,17 @@ jobs:
           --ks-key-alias ${{ secrets.KEY_ALIAS }} \
           --key-pass pass:${{ secrets.KEY_PASSWORD }} \
           --out app-release-signed.apk \
-          app-release-aligned.apk
+          app-release-aligned.apk || {
+            echo "APK signing failed!";
+            exit 1;
+          }
 
-    - name: Debug Signed APK
+    - name: Verify APK
       run: |
-        jarsigner -verify -verbose -certs app-release-signed.apk
+        apksigner verify --verbose app-release-signed.apk || {
+          echo "APK verification failed!";
+          exit 1;
+        }
 
     - name: Upload APK as artifact
       uses: actions/upload-artifact@v3
