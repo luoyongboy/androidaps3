@@ -39,7 +39,7 @@ jobs:
 
     - name: Decode Keystore
       run: |
-        echo "${{ secrets.KEYSTORE_FILE_BASE64 }}" | base64 -d > release-key.jks
+        echo "${{ secrets.KEYSTORE_FILE_BASE64 }}" | base64 -d > release-key-new.jks
 
     - name: Clean Gradle cache
       run: rm -rf $HOME/.gradle/caches/
@@ -60,7 +60,7 @@ jobs:
         echo "Found APK: $APK_FILE"
         zipalign -v -p 4 "$APK_FILE" app-release-aligned.apk
         apksigner sign \
-          --ks release-key.jks \
+          --ks release-key-new.jks \
           --ks-pass pass:${{ secrets.KEYSTORE_PASSWORD }} \
           --ks-key-alias ${{ secrets.KEY_ALIAS }} \
           --key-pass pass:${{ secrets.KEY_PASSWORD }} \
