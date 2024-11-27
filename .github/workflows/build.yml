@@ -37,10 +37,9 @@ jobs:
     - name: Install Android tools
       run: sudo apt-get install -y zipalign apksigner
 
-    - name: Decode Keystore from Base64
+    - name: Decode Keystore
       run: |
         echo "${{ secrets.KEYSTORE_FILE_BASE64 }}" | base64 -d > release-key.jks
-        ls -l release-key.jks  # 确保文件已成功解码并写入
 
     - name: Clean Gradle cache
       run: rm -rf $HOME/.gradle/caches/
