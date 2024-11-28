@@ -1,42 +1,50 @@
-name: Build AndroidAPS APK
+name: Build and Release APK
 
 on:
   push:
-    branches:
-      - main
-  pull_request:
-  workflow_dispatch:
+    tags:
+      - "*"  # 每次推送带有标签的代码时触发
+  workflow_dispatch: # 手动触发
 
 jobs:
   build:
-    name: Build APK
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      # 检出代码
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Setup JDK
-      uses: actions/setup-java@v3
-      with:
-        distribution: 'zulu'
-        java-version: '17'
+      # 设置 Java 环境
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+          cache: "gradle"
 
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v2
-      with:
-        api-level: 33
-        build-tools: 33.0.2
-        ndk: 23.1.7779620
+      # 构建未签名的 APK
+      - name: Build APK
+        run: ./gradlew assembleRelease --no-daemon
 
-    - name: Grant execute permission
-      run: chmod +x ./gradlew
+      # 安装工具 (zipalign 和 apksigner)
+      - name: Install android tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install zipalign apksigner
 
-    - name: Build APK
-      run: ./gradlew assembleRelease
+      # 签名 APK
+      - name: Sign APK
+        run: |
+          cd app/build/outputs/apk/release/
+          echo "$APK_RELEASE_KEY_BASE64" | base64 -d > release-key.jks
+          zipalign -v -p 4 app-release-unsigned.apk app-release-unsigned-aligned.apk
+          apksigner sign --ks release-key.jks --ks-pass pass:"$APK_RELEASE_KEY_PASSWORD" --out "aaps-${{ github.ref_name }}.apk" app-release-unsigned-aligned.apk
+        env:
+          APK_RELEASE_KEY_BASE64: ${{ secrets.APK_RELEASE_KEY_BASE64 }}
+          APK_RELEASE_KEY_PASSWORD: ${{ secrets.APK_RELEASE_KEY_PASSWORD }}
 
-    - name: Upload APK as artifact
-      uses: actions/upload-artifact@v4  # 升级为 v4
-      with:
-        name: AndroidAPS-APK
-        path: "**/outputs/apk/**/*.apk"
+      # 发布签名的 APK
+      - name: Release APK
+        uses: softprops/action-gh-release@v2
+        with:
+          files: app/build/outputs/apk/release/aaps-${{ github.ref_name }}.apk
