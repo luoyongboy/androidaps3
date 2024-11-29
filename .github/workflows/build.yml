@@ -16,6 +16,8 @@ jobs:
       # 检出代码
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}  # 确保使用 GITHUB_TOKEN
 
       # 设置 Java 环境
       - name: Set up Java
@@ -56,20 +58,17 @@ jobs:
           APK_RELEASE_KEY_BASE64: ${{ secrets.APK_RELEASE_KEY_BASE64 }}
           APK_RELEASE_KEY_PASSWORD: ${{ secrets.APK_RELEASE_KEY_PASSWORD }}
 
-      # 自动创建标签（如果没有标签）
-      - name: Create a new Git tag
+      # 自动创建并推送 Git 标签
+      - name: Create and push Git tag
         run: |
-          if [[ -z "${GITHUB_REF##refs/tags/*}" ]]; then
-            echo "Release already tagged"
-          else
-            VERSION="v${{ github.run_number }}-${{ github.ref_name }}"
-            git tag $VERSION
-            git push origin $VERSION
-            echo "Tag $VERSION created and pushed"
-          fi
+          VERSION="v${{ github.run_number }}-${{ github.ref_name }}"
+          git tag $VERSION
+          git push origin $VERSION
+          echo "Tag $VERSION created and pushed"
 
       # 发布签名的 APK
       - name: Release APK
         uses: softprops/action-gh-release@v2
         with:
           files: app/build/outputs/apk/full/release/aaps-${{ github.ref_name }}.apk
+          token: ${{ secrets.GITHUB_TOKEN }}
