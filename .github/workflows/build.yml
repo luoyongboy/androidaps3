@@ -26,17 +26,25 @@ jobs:
       - name: Build APK
         run: ./gradlew assembleRelease --no-daemon
 
-      # 确保输出目录存在，并检查文件是否生成
-      - name: Check APK output directory
+      # 检查输出目录并列出文件
+      - name: Check build output directory
         run: |
-          echo "Checking APK output directory..."
-          ls -R app/build/outputs/apk/
+          echo "Checking the entire build output directory..."
+          ls -R app/build/outputs/
 
       # 安装工具 (zipalign 和 apksigner)
       - name: Install android tools
         run: |
           sudo apt-get update
           sudo apt-get install zipalign apksigner
+
+      # 确保 APK 文件存在
+      - name: Ensure APK exists before signing
+        run: |
+          if [ ! -f app/build/outputs/apk/release/app-release-unsigned.apk ]; then
+            echo "APK file not found!"
+            exit 1
+          fi
 
       # 签名 APK
       - name: Sign APK
