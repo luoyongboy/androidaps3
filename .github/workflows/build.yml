@@ -6,6 +6,9 @@ on:
       - "*"  # 每次推送带有标签的代码时触发
   workflow_dispatch: # 手动触发
 
+permissions:
+  contents: write  # 确保 GITHUB_TOKEN 可以写入内容（例如，推送标签）
+
 jobs:
   build:
     runs-on: ubuntu-latest
