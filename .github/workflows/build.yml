@@ -53,6 +53,18 @@ jobs:
           APK_RELEASE_KEY_BASE64: ${{ secrets.APK_RELEASE_KEY_BASE64 }}
           APK_RELEASE_KEY_PASSWORD: ${{ secrets.APK_RELEASE_KEY_PASSWORD }}
 
+      # 自动创建标签（如果没有标签）
+      - name: Create a new Git tag
+        run: |
+          if [[ -z "${GITHUB_REF##refs/tags/*}" ]]; then
+            echo "Release already tagged"
+          else
+            VERSION="v${{ github.run_number }}-${{ github.ref_name }}"
+            git tag $VERSION
+            git push origin $VERSION
+            echo "Tag $VERSION created and pushed"
+          fi
+
       # 发布签名的 APK
       - name: Release APK
         uses: softprops/action-gh-release@v2
