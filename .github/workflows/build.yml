@@ -3,11 +3,8 @@ name: Build and Release APK
 on:
   push:
     tags:
-      - "*"  # 每次推送带有标签的代码时触发
-  workflow_dispatch: # 手动触发
-
-permissions:
-  contents: write  # 确保 GITHUB_TOKEN 可以写入内容（例如，推送标签）
+      - "*"  # 仅当有标签推送时触发构建
+  workflow_dispatch: # 手动触发工作流，手动发布时也会使用标签
 
 jobs:
   build:
@@ -16,8 +13,6 @@ jobs:
       # 检出代码
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}  # 确保使用 GITHUB_TOKEN
 
       # 设置 Java 环境
       - name: Set up Java
@@ -58,14 +53,16 @@ jobs:
           APK_RELEASE_KEY_BASE64: ${{ secrets.APK_RELEASE_KEY_BASE64 }}
           APK_RELEASE_KEY_PASSWORD: ${{ secrets.APK_RELEASE_KEY_PASSWORD }}
 
-      # 自动创建并推送 Git 标签
+      # 如果没有标签，手动创建并推送标签
       - name: Create and push Git tag
         run: |
-          VERSION="v${{ github.run_number }}-${{ github.ref_name }}"
-          echo "Creating tag: $VERSION"
-          git tag $VERSION
-          git push origin $VERSION
-          echo "Tag $VERSION created and pushed"
+          if [[ -z "${GITHUB_REF##refs/tags/*}" ]]; then
+            echo "Tag exists, skipping creation."
+          else
+            echo "No tag found. Creating a new tag."
+            git tag "v${{ github.run_number }}-${{ github.ref_name }}"
+            git push origin "v${{ github.run_number }}-${{ github.ref_name }}"
+          fi
 
       # 发布签名的 APK
       - name: Release APK
