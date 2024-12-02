@@ -4,13 +4,13 @@ on:
   push:
     tags:
       - "*"  # 仅当有标签推送时触发构建
-  workflow_dispatch: # 手动触发工作流，手动发布时也会使用标签
+  workflow_dispatch:  # 允许从 Actions 页面手动触发工作流
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # 检出代码，使用 GITHUB_TOKEN 确保身份验证
+      # 检出仓库代码
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -24,21 +24,11 @@ jobs:
           java-version: "17"
           cache: "gradle"
 
-      # 构建未签名的 APK
+      # 构建 APK
       - name: Build APK
         run: ./gradlew assembleRelease --no-daemon
 
-      # 确认生成的 APK 文件是否存在
-      - name: Check if APK file exists
-        run: |
-          if [ -f app/build/outputs/apk/full/release/app-full-release-unsigned.apk ]; then
-            echo "APK file found!"
-          else
-            echo "APK file not found!"
-            exit 1
-          fi
-
-      # 安装工具 (zipalign 和 apksigner)
+      # 安装 Android 工具 (zipalign 和 apksigner)
       - name: Install android tools
         run: |
           sudo apt-get update
@@ -54,9 +44,10 @@ jobs:
         env:
           APK_RELEASE_KEY_BASE64: ${{ secrets.APK_RELEASE_KEY_BASE64 }}
           APK_RELEASE_KEY_PASSWORD: ${{ secrets.APK_RELEASE_KEY_PASSWORD }}
+          REF_NAME: ${{ github.ref_name }}
 
-      # 如果没有标签，手动创建并推送标签
-      - name: Create and push Git tag
+      # 检查是否存在标签，如果没有则创建并推送标签
+      - name: Create and push Git tag if not exists
         run: |
           # 检查是否存在标签
           if [[ -z "${GITHUB_REF##refs/tags/*}" ]]; then
@@ -70,7 +61,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 发布签名的 APK
+      # 发布签名的 APK 文件到 GitHub Releases
       - name: Release APK
         uses: softprops/action-gh-release@v2
         with:
