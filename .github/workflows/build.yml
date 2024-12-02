@@ -70,13 +70,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 调试步骤，确保标签推送成功
-      - name: Debugging: Show Git Tags
-        run: |
-          git fetch --tags  # 拉取远程标签
-          git tag           # 列出本地标签
-          git log --oneline # 查看提交历史，确认标签是否存在
-
       # 发布签名的 APK
       - name: Release APK
         uses: softprops/action-gh-release@v2
