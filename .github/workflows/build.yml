@@ -1,3 +1,4 @@
+
 name: Build and Release APK
 
 on:
@@ -10,9 +11,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # 检出代码
+      # 检出代码，使用 GITHUB_TOKEN 确保身份验证
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}  # 使用 GITHUB_TOKEN 进行身份验证
 
       # 设置 Java 环境
       - name: Set up Java
