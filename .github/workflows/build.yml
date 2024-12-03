@@ -44,27 +44,6 @@ jobs:
         env:
           APK_RELEASE_KEY_BASE64: ${{ secrets.APK_RELEASE_KEY_BASE64 }}
           APK_RELEASE_KEY_PASSWORD: ${{ secrets.APK_RELEASE_KEY_PASSWORD }}
-          REF_NAME: ${{ github.ref_name }}
-
-      # 检查是否存在标签，如果没有则创建并推送标签
-      - name: Create and push Git tag if not exists
-        run: |
-          # 检查是否存在标签
-          if [[ -z "${GITHUB_REF##refs/tags/*}" ]]; then
-            echo "Tag exists, skipping creation."
-          else
-            echo "No tag found. Creating a new tag."
-            NEW_TAG="v${{ github.run_number }}-${{ github.ref_name }}"  # 定义标签名称
-            git tag $NEW_TAG
-            git push origin $NEW_TAG
-          fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # 等待标签同步并执行发布
-      - name: Fetch all tags
-        run: |
-          git fetch --tags
 
       # 发布签名的 APK 文件到 GitHub Releases
       - name: Release APK
