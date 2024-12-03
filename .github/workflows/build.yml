@@ -45,6 +45,11 @@ jobs:
           APK_RELEASE_KEY_BASE64: ${{ secrets.APK_RELEASE_KEY_BASE64 }}
           APK_RELEASE_KEY_PASSWORD: ${{ secrets.APK_RELEASE_KEY_PASSWORD }}
 
+      # 获取所有标签
+      - name: Fetch all tags
+        run: |
+          git fetch --tags
+
       # 发布签名的 APK 文件到 GitHub Releases
       - name: Release APK
         uses: softprops/action-gh-release@v2
