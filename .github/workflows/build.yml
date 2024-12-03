@@ -61,6 +61,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # 等待标签同步并执行发布
+      - name: Fetch all tags
+        run: |
+          git fetch --tags
+
       # 发布签名的 APK 文件到 GitHub Releases
       - name: Release APK
         uses: softprops/action-gh-release@v2
