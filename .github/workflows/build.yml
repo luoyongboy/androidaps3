@@ -1,10 +1,14 @@
-nname: Build APK
+name: Build and Release APK
 
 on:
   push:
+    # 当推送到任何标签时触发
+    tags:
+      - "*"  # 仅当有标签推送时触发构建
+    # 当推送到 main 分支时触发
     branches:
-      - main  # 或其他你想触发的分支
-  workflow_dispatch:  # 手动触发工作流
+      - "main"  # 也可以在主分支上推送时触发
+  workflow_dispatch:  # 允许从 Actions 页面手动触发工作流
 
 jobs:
   build:
@@ -14,7 +18,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}  # 使用 GITHUB_TOKEN 进行身份验证
 
       # 设置 Java 环境
       - name: Set up Java
@@ -33,7 +37,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install zipalign apksigner
-
       # 签名 APK
       - name: Sign APK
         run: |
@@ -45,9 +48,9 @@ jobs:
           APK_RELEASE_KEY_BASE64: ${{ secrets.APK_RELEASE_KEY_BASE64 }}
           APK_RELEASE_KEY_PASSWORD: ${{ secrets.APK_RELEASE_KEY_PASSWORD }}
 
-      # 上传 APK 文件为 Artifact
-      - name: Upload APK to GitHub Artifacts
-        uses: actions/upload-artifact@v3
+      # 发布签名的 APK 文件到 GitHub Releases
+      - name: Release APK
+        uses: softprops/action-gh-release@v2
         with:
-          name: APK-${{ github.ref_name }}
-          path: app/build/outputs/apk/full/release/aaps-${{ github.ref_name }}.apk
+          files: app/build/outputs/apk/full/release/aaps-${{ github.ref_name }}.apk
+          token: ${{ secrets.GITHUB_TOKEN }}
