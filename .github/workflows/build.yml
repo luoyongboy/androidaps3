@@ -1,10 +1,10 @@
-name: Build and Release APK
+name: Build APK
 
 on:
   push:
-    tags:
-      - "*"  # 仅当有标签推送时触发构建
-  workflow_dispatch:  # 允许从 Actions 页面手动触发工作流
+    branches:
+      - main  # 或其他你想触发的分支
+  workflow_dispatch:  # 手动触发工作流
 
 jobs:
   build:
@@ -14,7 +14,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}  # 使用 GITHUB_TOKEN 进行身份验证
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       # 设置 Java 环境
       - name: Set up Java
@@ -45,15 +45,9 @@ jobs:
           APK_RELEASE_KEY_BASE64: ${{ secrets.APK_RELEASE_KEY_BASE64 }}
           APK_RELEASE_KEY_PASSWORD: ${{ secrets.APK_RELEASE_KEY_PASSWORD }}
 
-      # 获取所有标签
-      - name: Fetch all tags
-        run: |
-          git fetch --tags
-          git tag  # 打印当前仓库标签，检查是否存在
-
-      # 发布签名的 APK 文件到 GitHub Releases
-      - name: Release APK
-        uses: softprops/action-gh-release@v2
+      # 上传 APK 文件为 Artifact
+      - name: Upload APK to GitHub Artifacts
+        uses: actions/upload-artifact@v3
         with:
-          files: app/build/outputs/apk/full/release/aaps-${{ github.ref_name }}.apk
-          token: ${{ secrets.GITHUB_TOKEN }}
+          name: APK-${{ github.ref_name }}
+          path: app/build/outputs/apk/full/release/aaps-${{ github.ref_name }}.apk
